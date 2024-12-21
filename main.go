@@ -23,19 +23,19 @@ func acceptableLine(line string, line_no int) bool {
 		role, roleOk := message["role"].(string)
 		content, contentOk := message["content"].(string)
 		if !roleOk {
-			fmt.Printf("Line %d: Role not found", line_no)
+			fmt.Printf("Line %d: Missing required field \"role\"", line_no)
 			return false
 		}
 		if !contentOk {
-			fmt.Printf("Line %d: Content not found", line_no)
+			fmt.Printf("Line %d: Missing required field \"content\"", line_no)
 			return false
 		}
 		if role != "assistant" && role != "system" && role != "user" {
-			fmt.Printf("Line %d: Invalid role %s found\n", line_no, role)
+			fmt.Printf("Line %d: Invalid \"role\" %s found\n", line_no, role)
 			return false
 		}
 		if content == "" {
-			fmt.Printf("Line %d: The content is empty", line_no)
+			fmt.Printf("Line %d: \"content\" is empty", line_no)
 			return false
 		}
 	}
@@ -73,5 +73,7 @@ func main() {
 		fmt.Printf("Error reading file: %v\n", err)
 	} else if flag {
 		fmt.Println("The JSONL is valid 🎉")
+	} else {
+		fmt.Println("The JSONL is invalid ❌")
 	}
 }
