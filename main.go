@@ -8,32 +8,54 @@ import (
 )
 
 func acceptableLine(line string, line_no int) bool {
-	var jsonMap map[string][]map[string]interface{}
-	err := json.Unmarshal([]byte(line), &jsonMap)
-	if err != nil {
+	var rawMap map[string]interface{}
+	if err := json.Unmarshal([]byte(line), &rawMap); err != nil {
 		return false
 	}
 
-	messages, ok := jsonMap["messages"]
+	// Check for unexpected top-level keys
+	if len(rawMap) != 1 || rawMap["messages"] == nil {
+		fmt.Printf("Line %d: Only \"messages\" key is allowed at top level\n", line_no)
+		return false
+	}
+
+	messages, ok := rawMap["messages"].([]interface{})
 	if !ok {
+		fmt.Printf("Line %d: \"messages\" must be an array\n", line_no)
 		return false
 	}
 
-	for _, message := range messages {
-		role, roleOk := message["role"].(string)          // required
-		content, contentOk := message["content"].(string) // required
-		weight, weightOk := message["weight"].(uint8)     // optional
+	for _, msg := range messages {
+		message, ok := msg.(map[string]interface{})
+		if !ok {
+			fmt.Printf("Line %d: Each message must be an object\n", line_no)
+			return false
+		}
+
+		// Check for unexpected keys in message objects
+		allowedKeys := map[string]bool{"role": true, "content": true, "weight": true}
+		for key := range message {
+			if !allowedKeys[key] {
+				fmt.Printf("Line %d: Unexpected key \"%s\" in message object\n", line_no, key)
+				return false
+			}
+		}
+
+		role, roleOk := message["role"].(string)
+		content, contentOk := message["content"].(string)
+		weight, weightOk := message["weight"].(float64)
+
 		if !roleOk {
-			fmt.Printf("Line %d: Missing required field \"role\"", line_no)
+			fmt.Printf("Line %d: Missing required field \"role\"\n", line_no)
 			return false
 		}
 		if !contentOk {
-			fmt.Printf("Line %d: Missing required field \"content\"", line_no)
+			fmt.Printf("Line %d: Missing required field \"content\"\n", line_no)
 			return false
 		}
 		if weightOk {
 			if weight != 0 && weight != 1 {
-				fmt.Printf("Line %d: Invalid \"weight\" %d found\n", line_no, weight)
+				fmt.Printf("Line %d: Invalid \"weight\" %f found\n", line_no, weight)
 				return false
 			}
 		}
@@ -42,7 +64,7 @@ func acceptableLine(line string, line_no int) bool {
 			return false
 		}
 		if content == "" {
-			fmt.Printf("Line %d: \"content\" is empty", line_no)
+			fmt.Printf("Line %d: \"content\" is empty\n", line_no)
 			return false
 		}
 	}
