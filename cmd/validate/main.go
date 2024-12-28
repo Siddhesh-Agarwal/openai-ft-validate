@@ -88,7 +88,7 @@ func main() {
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
-	line_no := 1
+	var line_no uint = 1
 	flag := true
 	for scanner.Scan() {
 		line := scanner.Text()
